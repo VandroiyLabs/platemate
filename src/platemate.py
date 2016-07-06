@@ -80,6 +80,12 @@ class PlateMate:
         """
         return self.fldata[self.allCols(pop)]
 
+    def getOpticalDensity(self, pop):
+        """
+        missing doc
+        """
+        return self.oddata[self.allCols(pop)]
+
     ## temperature
 
     def getTemperature(self):
@@ -114,8 +120,7 @@ class PlateMate:
         """
         missing doc
         """
-
-        pl.figure(figsize=(4,3))
+        
 
         if type(listPops) != type([]): listPops = [listPops]
 
@@ -148,8 +153,6 @@ class PlateMate:
         missing doc
         """
 
-        pl.figure(figsize=(4,3))
-
         if type(listPops) != type([]): listPops = [listPops]
 
         maxf = 0.
@@ -172,6 +175,42 @@ class PlateMate:
 
         return
 
+
+    def plotFuzzyMean(self, listPops, colors = [], ylabel = "Fluorescence (a.u.)",
+                      fill_alpha = 0.6, lw = 2.0, markersize = 12):
+        """
+        missing doc
+        """
+
+        if type(listPops) != type([]): listPops = [listPops]
+
+        maxf = 0.
+        minf = 1.e10
+        
+        for pop in listPops:
+            F  = np.array( self.getFluorescence(pop).mean(axis=1) )
+            dF = np.array( self.getFluorescence(pop).std(axis=1) )
+            
+            pl.plot(F, "-o", linewidth=lw, markersize=markersize,
+                    color=(0.2,0.2,0.2), markerfacecolor=self.colors[pop],
+                    markeredgecolor=(0.2,0.2,0.2) )
+
+            x = np.arange(0, F.shape[0],1 )# needs fixing!
+            pl.fill_between(x, F - dF, F + dF, alpha = fill_alpha,
+                            edgecolor='none', facecolor=self.colors[pop])
+
+            if maxf < F.max().max() : maxf = F.max().max()
+            if minf > F.min().min() : minf = F.min().min()
+
+
+        # setting labels and axes
+        pl.xlabel('Time (h)')
+        pl.ylabel(ylabel)
+        pl.ylim(0.3*minf, 1.2*maxf)
+
+        #pl.tight_layout()
+
+        return
 
     
     def plotBars(self, listPops, time, binwidth = 0.15):
@@ -319,7 +358,7 @@ class PlateMate:
         return
 
     def readOpticalDensity(self):
-        self.od = self.read_timeformat(self.ODlist, datarow=1)
+        self.oddata = self.read_timeformat(self.ODlist, datarow=1)
         return
 
     def read_timeformat(self, ListOfFiles, nr_header = 2, sep = '\t',
