@@ -1,0 +1,15 @@
+*~
+*#*#
+
+# python bytecode and objects
+*.pyc
+*.pyo
+
+# jupyter notebook checkpoints
+*.ipynb_checkpoints*
+
+# note syncing datafiles
+*.csv
+*.pda
+*.txt
+*.zip
