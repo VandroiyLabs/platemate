@@ -21,21 +21,50 @@ class PlateMate:
     missing doc
     """
 
-    def __init__(self, ColumnNames = {}):
+    def __init__(self, colonyNames = {}, controlNames = {}):
         """
         missing doc
         """
+        
+        self.colonyNames  = colonyNames
+        self.controlNames = controlNames
+        
+        # putting everything together
+        self.colNames = colonyNames.copy()
+        self.colNames.update( controlNames )
 
-        self.ColumnNames = ColumnNames
-        self.MeaningColNames = { v: k for k, v in ColumnNames.items()}
-
+        # getting class for each
+        self.colClasses = { v : "colony" for k, v in self.colonyNames.items()}
+        self.colClasses.update( { v : "control" for k, v in self.controlNames.items()} )
+        
+        
+        # associating a color to each colony
+        self.colors = {}
+        pointers = { "control" : 0 , "colony" : 0 }
+        for cname in self.colNames.values():
+            cclass = self.colClasses[cname]
+            self.colors[cname] = plot.pallet[cclass][ pointers[cclass] ]
+            pointers[cclass] += 1
+        
+        # inverting the indexing of colonies
+        self.MeaningColNames = { v: k for k, v in self.colNames.items()}
+        
+        
         return
 
 
     ##
     ## API
     ##
-
+    
+    def getColonyNames(self):
+        """ Get the names of all colonies considered """
+        return self.colonyNames.values()
+    
+    def getControlNames(self):
+        """ Get the names of all control colonies considered """
+        return self.controlNames.values()
+    
     def summary(self, pop = "", nrows = 3):
         """
         missing doc
@@ -94,19 +123,11 @@ class PlateMate:
         minf = 1.e10
 
         # iterating colors
-        citer = 0
-        if colors == []:
-            npopulations = len(listPops)
-            for j in range(npopulations):
-                colors.append( plot.colors[j] )
-
         for pop in listPops:
-
             F = self.getFluorescence(pop)
-
-            plot.simplePlot( F, fillcolor=colors[citer] )
-            citer += 1
-
+            
+            plot.simplePlot( F, fillcolor=self.colors[pop] )
+            
             if maxf < F.max().max() : maxf = F.max().max()
             if minf > F.min().min() : minf = F.min().min()
 
@@ -133,19 +154,10 @@ class PlateMate:
 
         maxf = 0.
         minf = 1.e10
-
-        # iterating colors
-        citer = 0
-        if colors == []:
-            npopulations = len(listPops)
-            for j in range(npopulations):
-                colors.append( plot.colors[j] )
         
         for pop in listPops:
-
             F = np.array( self.getFluorescence(pop).mean(axis=1) )
-            plot.simplePlot( F, fillcolor=colors[citer] )
-            citer += 1
+            plot.simplePlot( F, fillcolor=self.colors[pop] )
 
             if maxf < F.max().max() : maxf = F.max().max()
             if minf > F.min().min() : minf = F.min().min()
@@ -162,27 +174,18 @@ class PlateMate:
 
 
     
-    def plotBars(self, listPops, time, colors=[], control = [],
-                binwidth = 0.15):
+    def plotBars(self, listPops, time, binwidth = 0.15):
 
         error_config = {'ecolor': '0.', 'width': 10.0, 'linewidth' : 2.}
 
         if type(listPops) != type([]): listPops = [listPops]
 
+        # estimating the upper boung for plotting
         maxf = 0.
-
-        # iterating colors
-        citer = 0
-        if colors == []:
-            npopulations = len(listPops)
-            for j in range(npopulations):
-                colors.append( plot.colors[j] )
-
-        colors.append( plot.controlColors[0] )
         
         # Positioning each colony
         colonies = np.arange(1., 4., 1)
-
+        
         linen = 1
 
         for pop in listPops:
@@ -190,32 +193,21 @@ class PlateMate:
             maxf = max( maxf, F.max() )
 
             vals, stds = biolrepl( F )
-            pl.bar(colonies + linen*0.2 - 0.5, vals, binwidth, color=colors[linen-1],
-                    label=listPops[linen-1],
-                    yerr=stds, error_kw=error_config)
+            pl.bar(colonies + linen*0.2 - 0.5, vals, binwidth,
+                   color = self.colors[pop],
+                   label = listPops[linen-1],
+                   yerr = stds, error_kw=error_config)
 
             linen += 1
-
-        for pop in control:
-            F = self.getFluorescence(pop).iloc[time]
-            maxf = max( maxf, F.max() )
-
-            vals, stds = biolrepl( F )
-            pl.bar(colonies + linen*0.2 - 0.5, vals, binwidth, color=colors[linen-1],
-                    label=control[0],
-                    yerr=stds, error_kw=error_config)
-
-            linen += 1
-
         
-        pl.xlabel("Colony id.")
+        pl.xlabel("Biological replicate")
         pl.xticks( np.array(colonies, dtype=int) )
         pl.xlim(0.5, colonies.shape[0]+0.5)
 
         pl.ylabel("Fluorescence (a.u.)")
         pl.ylim(0., maxf*1.2)
 
-        pl.legend( bbox_to_anchor=(1.3, 0.7), numpoints = 1 )
+        pl.legend( bbox_to_anchor=(1.32, 0.7), numpoints = 1 )
 
         return
 
