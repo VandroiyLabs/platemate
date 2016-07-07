@@ -145,7 +145,7 @@ class PlateMate:
 
         # setting labels and axes
         pl.xlabel('Time (h)')
-        pl.xlim(-0.5,11.5)
+        pl.xlim(-0.5,8.5)
         pl.ylabel(r'Temperature ($^o$C)')
         pl.ylim(22.6,26.4)
 
