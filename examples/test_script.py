@@ -34,6 +34,6 @@ print 'reading optical density...'
 pm.readOpticalDensity()
 
 
-pl.figure(figsize=(4,3))
-pm.plotFuzzyMean(["Dev1","Dev2","Dev3"])
-pl.show()
+pm.ANOVA(["Dev1","Dev2","Dev3","-control1"])
+res = pm.TukeyHSD(["Dev1","Dev2","Dev3","-control1"])
+print res

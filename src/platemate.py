@@ -1,19 +1,28 @@
-import pylab as pl
-import numpy as np
-import pandas as pd
-import scipy.stats
+## Standard libraries
 import copy
 import glob
 #import chardet # really necessary?
 import io
 
+## Key libraries
+import pylab as pl
+import numpy as np
+import pandas as pd
+import itertools
 
-# Internal libraries
+## Statistical libraries
+import scipy.stats
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+
+
+
+
+# PlateMate Internal libraries
 from extrafunctions import *
-#reload(extrafunctions)
-
 import plot
 reload(plot)
+
+
 
 
 class PlateMate:
@@ -50,11 +59,35 @@ class PlateMate:
         self.MeaningColNames = { v: k for k, v in self.colNames.items()}
         
         
+        self.setupVariables()
+        
+        
         return
 
 
+
+
+    def setupVariables(self):
+        """
+        missing doc
+        """
+
+        ## Plotting variables
+        
+        # Color of lines used when connecting points
+        self.plot_connline_color = (0.2,0.2,0.2)
+        # Color of the edge of markers
+        self.plot_markeredge_color = (0.2,0.2,0.2)
+        
+        return
+
+
+
+    
     ##
     ## API
+    ## Interface that connects the users with the low-level
+    ## dataframes.
     ##
     
     def getColonyNames(self):
@@ -95,6 +128,12 @@ class PlateMate:
         return self.fldata["T(oC)"]
 
 
+
+    
+    ##
+    ## Plotting
+    ##
+    
     def plotTemperature(self):
         """
         missing doc
@@ -114,8 +153,7 @@ class PlateMate:
 
         return
 
-
-    # plotting stuff
+    
     def plotIt(self, listPops, colors = [], ylabel = "Fluorescence (a.u.)"):
         """
         missing doc
@@ -192,8 +230,9 @@ class PlateMate:
             dF = np.array( self.getFluorescence(pop).std(axis=1) )
             
             pl.plot(F, "-o", linewidth=lw, markersize=markersize,
-                    color=(0.2,0.2,0.2), markerfacecolor=self.colors[pop],
-                    markeredgecolor=(0.2,0.2,0.2) )
+                    color=self.plot_connline_color,
+                    markerfacecolor=self.colors[pop],
+                    markeredgecolor=self.plot_markeredge_color )
 
             x = np.arange(0, F.shape[0],1 )# needs fixing!
             pl.fill_between(x, F - dF, F + dF, alpha = fill_alpha,
@@ -272,6 +311,57 @@ class PlateMate:
 
         return U, p
 
+
+
+    def ANOVA(self, listPops):
+        """
+        Anova
+        """
+
+        if type(listPops) != type([]): listPops = [listPops]
+
+        # Gathering all data required.
+        Paux = {}
+        for pop in listPops:
+            p = np.array( self.getFluorescence(pop) )
+            data1 = np.reshape( p, (p.shape[0]*p.shape[1]) )
+            Paux[pop] = data1
+
+        # Evaluating anova
+        U, p = scipy.stats.f_oneway( *Paux.values() )
+        
+        return U, p
+
+    def TukeyHSD(self, listPops, confidence = 0.95):
+        """
+        Post-hoc Tukey HSD test.
+        """
+
+        if type(listPops) != type([]): listPops = [listPops]
+
+        ## Gathering all data required.
+        Paux = np.zeros((0,2))
+        popid = 0
+        for pop in listPops:
+            p = np.array( self.getFluorescence(pop) )
+            data1 = np.zeros( (p.shape[0]*p.shape[1],2) )
+            data1[:,0] = np.reshape( p, (p.shape[0]*p.shape[1]) )
+            data1[:,1] = popid
+            popid += 1
+
+            Paux = np.concatenate([Paux, data1], axis=0)
+
+        ## Evaluating Tukey's HSD
+        tukey_res = pairwise_tukeyhsd(Paux[:,0], Paux[:,1], alpha= 1 - confidence)
+
+        ## Creating a dataframe with the results
+        Groups = np.array( list( itertools.combinations(listPops, 2) ) )
+        data = {'Group 1' : Groups[:,0], 'Group 2': Groups[:,1],
+                'Mean diff': tukey_res.meandiffs, 'Reject H0?' : tukey_res.reject}
+        df = pd.DataFrame(data=data)
+        
+        return df
+    
 
     ##
     ## Data filtering
