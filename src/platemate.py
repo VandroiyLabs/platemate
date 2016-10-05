@@ -247,6 +247,28 @@ class PlateMate:
         return
 
 
+    def snapshotBoxWhiskers(self, Channel, time, listPops = "", showControl = False):
+        """
+        missing doc
+        """
+
+        if listPops == "": listPops = self.colonyNames
+        if type(listPops) != type([]): listPops = [listPops]
+        if showControl: listPops = np.append( listPops, self.controlNames )
+
+        allData = []
+        for pop in listPops:
+            allData.append( np.array( self.getFluorescence(pop, Channel) )[time] )
+
+        pl.boxplot(allData)
+        pl.xticks(np.arange(1,len(listPops)+1), listPops)
+
+        pl.ylabel("Fluorescence (u.a.)")
+        pl.xlabel("Colonies")
+
+        return
+
+
     def plotFuzzyMean(self, Channel, listPops, colors = [], ylabel = "Fluorescence (a.u.)",
                       fill_alpha = 0.6, lw = 2.0, markersize = 12):
         """
