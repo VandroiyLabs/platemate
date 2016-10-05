@@ -115,7 +115,7 @@ class PlateMate:
         """
         missing doc
         """
-        return self.FLdata[Channel][self.allCols(pop)]
+        return self.FLdata[Channel][self.allCols(POP)]
 
     def getOpticalDensity(self, pop):
         """
