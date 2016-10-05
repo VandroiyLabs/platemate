@@ -50,6 +50,9 @@ class PlateMate:
         self.colClasses = { k : "colony" for k, v in self.colonyMap.items()}
         self.colClasses.update( { k : "control" for k, v in self.controlMap.items()} )
 
+        # main data source
+        self.FLdata = {}
+
 
         # associating a color to each colony
         self.colors = {}
@@ -108,11 +111,11 @@ class PlateMate:
         return self.fldata[self.allCols(pop)].head(nrows)
 
 
-    def getFluorescence(self, pop):
+    def getFluorescence(self, POP, Channel):
         """
         missing doc
         """
-        return self.fldata[self.allCols(pop)]
+        return self.FLdata[Channel][self.allCols(pop)]
 
     def getOpticalDensity(self, pop):
         """
@@ -368,7 +371,38 @@ class PlateMate:
     ## Data filtering
     ##
 
-    def allCols(self, labels, r0 = 1, rf = 9):
+    def allCols(self, POP, r0 = 1, rf = 9):
+        """
+        missing doc
+        """
+
+        cols = []
+
+        mapCode = self.map[POP]
+
+        ## IF whole column....
+        if len(mapCode) == 1:
+            row = mapCode[0]
+            for j in range(r0,rf+1):
+                cols.append( row + str(j).zfill(2) )
+
+        ## Or more than one column!
+        else:
+            nrows = len(mapCode) / 2
+            for rowid in range(nrows):
+                mapid = rowid*2
+                print mapCode[mapid+1][1:]
+                row = mapCode[mapid][0]
+                startcol = int( mapCode[mapid][1:] )
+                endcol   = int( mapCode[mapid+1][1:] )
+                print startcol, endcol
+                for j in range(startcol, endcol):
+                    cols.append( row + str(j).zfill(2) )
+
+        return cols
+
+
+    def allCols__old(self, labels, r0 = 1, rf = 9):
         """
         missing doc
         """
@@ -531,13 +565,21 @@ class PlateMate:
 
 
 
-    def readfromSpreadSheet(self, InitialRow, ncols = 12, nrows = 8):
+    def readfromSpreadSheet(self, Channel, InitialRow, ncols = 12, nrows = 8):
         """MUST WRITE...
         """
 
+        # List of ascii letters uppercase
         LTS = list(string.ascii_uppercase)[:20]
 
+        # auxV will work as a temporary numpy array to hold
+        # readings, and at the end we will turn it into a
+        # pandas dataframe with the appropriate column names.
         auxV = np.zeros( (0,nrows*ncols) )
+
+        ##
+        ## Loop through files found
+        ##
         for file in self.FLlist:
 
             spsheet = xl.load_workbook(file)['final']
@@ -550,19 +592,24 @@ class PlateMate:
                     read[row,col] = float( spsheet[LTS[col+1]+str(line)].value )
 
 
+            # Adding the current results to auxV
             auxV = np.concatenate(
                         (auxV, np.reshape(read, (1,read.shape[0]*read.shape[1]) ) ),
                         axis = 0 )
 
 
-            columns = []
-            for row in range(nrows):
-                for col in range(ncols):
-                    columns.append( LTS[row] + str(col).zfill(2) )
-            TimeReadings = pd.DataFrame(data=auxV, columns=columns)
+        ##
+        ## Storing the result in FLdata
+        ##
 
+        columns = []
+        for row in range(nrows):
+            for col in range(ncols):
+                columns.append( LTS[row] + str(col).zfill(2) )
 
-        return TimeReadings
+        self.FLdata[Channel] = pd.DataFrame(data=auxV, columns=columns)
+
+        return
 
 
 
