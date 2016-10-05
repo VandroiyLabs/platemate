@@ -40,27 +40,24 @@ class PlateMate:
         self.colonyMap = colonyMap
         self.controlMap = controlMap
         self.colonyNames  = colonyMap.keys()
-        self.controlNames = controlMap
+        self.controlNames = controlMap.keys()
 
         # putting everything together
-        self.colNames = colonyNames.copy()
-        self.colNames.update( controlNames )
+        self.map = self.colonyMap.copy()
+        self.map.update( controlMap )
 
         # getting class for each
-        self.colClasses = { v : "colony" for k, v in self.colonyNames.items()}
-        self.colClasses.update( { v : "control" for k, v in self.controlNames.items()} )
+        self.colClasses = { k : "colony" for k, v in self.colonyMap.items()}
+        self.colClasses.update( { k : "control" for k, v in self.controlMap.items()} )
 
 
         # associating a color to each colony
         self.colors = {}
         pointers = { "control" : 0 , "colony" : 0 }
-        for cname in self.colNames.values():
+        for cname in self.colonyNames:
             cclass = self.colClasses[cname]
             self.colors[cname] = plot.pallet[cclass][ pointers[cclass] ]
             pointers[cclass] += 1
-
-        # inverting the indexing of colonies
-        self.MeaningColNames = { v: k for k, v in self.colNames.items()}
 
 
         self.setupVariables()
@@ -96,11 +93,11 @@ class PlateMate:
 
     def getColonyNames(self):
         """ Get the names of all colonies considered """
-        return self.colonyNames.values()
+        return self.colonyNames
 
     def getControlNames(self):
         """ Get the names of all control colonies considered """
-        return self.controlNames.values()
+        return self.controlNames
 
     def summary(self, pop = "", nrows = 3):
         """
@@ -433,7 +430,7 @@ class PlateMate:
 
         # Looping through all files in the pattern
         for file in glob.glob(path + pattern + "*" + extension):
-            tidx.append( float( file.split(' ')[1].split('.')[0] ) )
+            tidx.append( float( file.split(' ')[-1].split('.')[0] ) )
             FLlist.append(file)
             ODlist.append('OD'+file.split(' ')[1].split('.')[0]+'.txt')
 
