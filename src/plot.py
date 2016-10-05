@@ -1,11 +1,11 @@
 import numpy as np
 import pylab as pl
 
-def simplePlot(timeseries, lw = 1.5, markersize = 11., fillcolor=(0.3,0.5,1.0),
+def simplePlot(timeseries, label = "", lw = 1.5, markersize = 11., fillcolor=(0.3,0.5,1.0),
                 markeredgecolor=(0.2,0.2,0.2), format = "o", lformat = "-"):
 
     pl.plot(timeseries, format + lformat, lw=lw, markersize=markersize,
-            color=fillcolor, markeredgecolor=markeredgecolor )
+            color=fillcolor, markeredgecolor=markeredgecolor, label = label )
 
     return
 

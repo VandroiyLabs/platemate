@@ -52,6 +52,7 @@ class PlateMate:
 
         # main data source
         self.FLdata = {}
+        self.rawFLdata = {}
 
 
         # associating a color to each colony
@@ -117,6 +118,29 @@ class PlateMate:
         """
         return self.FLdata[Channel][self.allCols(POP)]
 
+
+    def normalizeAllFluorescence(self, Channel, ODChannel):
+        """
+        missing doc
+        """
+
+        for popName in self.colonyNames:
+            self.normalizeFluorescence(popName, Channel, ODChannel)
+
+        return
+
+
+    def normalizeFluorescence(self, POP, Channel, ODChannel):
+        """
+        missing doc
+        """
+
+        self.FLdata[Channel][self.allCols(POP)] = \
+            self.rawFLdata[Channel][self.allCols(POP)] / self.rawFLdata[ODChannel][self.allCols(POP)]
+
+        return
+
+
     def getOpticalDensity(self, pop):
         """
         missing doc
@@ -158,7 +182,7 @@ class PlateMate:
         return
 
 
-    def plotIt(self, listPops, colors = [], ylabel = "Fluorescence (a.u.)"):
+    def plotIt(self, Channel, listPops, colors = [], ylabel = "Fluorescence (a.u.)"):
         """
         missing doc
         """
@@ -171,7 +195,7 @@ class PlateMate:
 
         # iterating colors
         for pop in listPops:
-            F = self.getFluorescence(pop)
+            F = self.getFluorescence(pop, Channel)
 
             plot.simplePlot( F, fillcolor=self.colors[pop] )
 
@@ -190,7 +214,7 @@ class PlateMate:
 
 
 
-    def plotMean(self, listPops, colors = [], ylabel = "Fluorescence (a.u.)"):
+    def plotMean(self, Channel, listPops, colors = [], ylabel = "Fluorescence (a.u.)"):
         """
         missing doc
         """
@@ -199,26 +223,31 @@ class PlateMate:
 
         maxf = 0.
         minf = 1.e10
+        maxx = 0.0
+        minx = -1.0
 
         for pop in listPops:
-            F = np.array( self.getFluorescence(pop).mean(axis=1) )
-            plot.simplePlot( F, fillcolor=self.colors[pop] )
+            F = np.array( self.getFluorescence(pop, Channel).mean(axis=1) )
+            plot.simplePlot( F, fillcolor=self.colors[pop], label = pop )
 
             if maxf < F.max().max() : maxf = F.max().max()
             if minf > F.min().min() : minf = F.min().min()
+
+            maxx = max(maxx, F.shape[0])
 
 
         # setting labels and axes
         pl.xlabel('Time (h)')
         pl.ylabel(ylabel)
         pl.ylim(0.3*minf, 1.2*maxf)
+        pl.xlim(minx, maxx)
 
         #pl.tight_layout()
 
         return
 
 
-    def plotFuzzyMean(self, listPops, colors = [], ylabel = "Fluorescence (a.u.)",
+    def plotFuzzyMean(self, Channel, listPops, colors = [], ylabel = "Fluorescence (a.u.)",
                       fill_alpha = 0.6, lw = 2.0, markersize = 12):
         """
         missing doc
@@ -230,10 +259,10 @@ class PlateMate:
         minf = 1.e10
 
         for pop in listPops:
-            F  = np.array( self.getFluorescence(pop).mean(axis=1) )
-            dF = np.array( self.getFluorescence(pop).std(axis=1) )
+            F  = np.array( self.getFluorescence(pop, Channel).mean(axis=1) )
+            dF = np.array( self.getFluorescence(pop, Channel).std(axis=1) )
 
-            pl.plot(F, "-o", linewidth=lw, markersize=markersize,
+            pl.plot(F, "-o", label = pop, linewidth=lw, markersize=markersize,
                     color=self.plot_connline_color,
                     markerfacecolor=self.colors[pop],
                     markeredgecolor=self.plot_markeredge_color )
@@ -605,7 +634,8 @@ class PlateMate:
             for col in range(ncols):
                 columns.append( LTS[row] + str(col).zfill(2) )
 
-        self.FLdata[Channel] = pd.DataFrame(data=auxV, columns=columns)
+        self.rawFLdata[Channel] = pd.DataFrame(data=auxV, columns=columns)
+        self.FLdata[Channel] = self.rawFLdata[Channel]
 
         return
 
