@@ -530,6 +530,47 @@ class PlateMate:
 
 
 
+
+    def readfromSpreadSheet(self, InitialRow, ncols = 12, nrows = 8):
+        """MUST WRITE...
+        """
+
+        LTS = list(string.ascii_uppercase)[:20]
+
+        auxV = np.zeros( (0,nrows*ncols) )
+        for file in self.FLlist:
+            print file
+            spsheet = xl.load_workbook(file)['final']
+
+            read = np.zeros( (nrows, ncols) )
+
+            for row in range(nrows):
+                line = row + InitialRow
+                for col in range(ncols):
+                    read[row,col] = float( spsheet[LTS[col+1]+str(line)].value )
+
+
+            auxV = np.concatenate(
+                        (auxV, np.reshape(read, (1,read.shape[0]*read.shape[1]) ) ),
+                        axis = 0 )
+            print auxV.shape
+
+
+            columns = []
+            for row in range(nrows):
+                for col in range(ncols):
+                    columns.append( LTS[row] + str(col).zfill(2) )
+            TimeReadings = pd.DataFrame(data=auxV, columns=columns)
+
+
+        return TimeReadings
+
+
+
+
+
+
+
     def filterTime(self, time):
         """
         missing doc
