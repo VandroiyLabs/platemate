@@ -8,6 +8,8 @@ import io
 import pylab as pl
 import numpy as np
 import pandas as pd
+import openpyxl as xl
+import string
 import itertools
 
 ## Statistical libraries
@@ -30,14 +32,16 @@ class PlateMate:
     missing doc
     """
 
-    def __init__(self, colonyNames = {}, controlNames = {}):
+    def __init__(self, colonyMap = {}, controlMap = {}):
         """
         missing doc
         """
-        
-        self.colonyNames  = colonyNames
-        self.controlNames = controlNames
-        
+
+        self.colonyMap = colonyMap
+        self.controlMap = controlMap
+        self.colonyNames  = colonyMap.keys()
+        self.controlNames = controlMap
+
         # putting everything together
         self.colNames = colonyNames.copy()
         self.colNames.update( controlNames )
@@ -45,8 +49,8 @@ class PlateMate:
         # getting class for each
         self.colClasses = { v : "colony" for k, v in self.colonyNames.items()}
         self.colClasses.update( { v : "control" for k, v in self.controlNames.items()} )
-        
-        
+
+
         # associating a color to each colony
         self.colors = {}
         pointers = { "control" : 0 , "colony" : 0 }
@@ -54,14 +58,14 @@ class PlateMate:
             cclass = self.colClasses[cname]
             self.colors[cname] = plot.pallet[cclass][ pointers[cclass] ]
             pointers[cclass] += 1
-        
+
         # inverting the indexing of colonies
         self.MeaningColNames = { v: k for k, v in self.colNames.items()}
-        
-        
+
+
         self.setupVariables()
-        
-        
+
+
         return
 
 
@@ -73,31 +77,31 @@ class PlateMate:
         """
 
         ## Plotting variables
-        
+
         # Color of lines used when connecting points
         self.plot_connline_color = (0.2,0.2,0.2)
         # Color of the edge of markers
         self.plot_markeredge_color = (0.2,0.2,0.2)
-        
+
         return
 
 
 
-    
+
     ##
     ## API
     ## Interface that connects the users with the low-level
     ## dataframes.
     ##
-    
+
     def getColonyNames(self):
         """ Get the names of all colonies considered """
         return self.colonyNames.values()
-    
+
     def getControlNames(self):
         """ Get the names of all control colonies considered """
         return self.controlNames.values()
-    
+
     def summary(self, pop = "", nrows = 3):
         """
         missing doc
@@ -129,11 +133,11 @@ class PlateMate:
 
 
 
-    
+
     ##
     ## Plotting
     ##
-    
+
     def plotTemperature(self):
         """
         missing doc
@@ -153,12 +157,12 @@ class PlateMate:
 
         return
 
-    
+
     def plotIt(self, listPops, colors = [], ylabel = "Fluorescence (a.u.)"):
         """
         missing doc
         """
-        
+
 
         if type(listPops) != type([]): listPops = [listPops]
 
@@ -168,9 +172,9 @@ class PlateMate:
         # iterating colors
         for pop in listPops:
             F = self.getFluorescence(pop)
-            
+
             plot.simplePlot( F, fillcolor=self.colors[pop] )
-            
+
             if maxf < F.max().max() : maxf = F.max().max()
             if minf > F.min().min() : minf = F.min().min()
 
@@ -195,7 +199,7 @@ class PlateMate:
 
         maxf = 0.
         minf = 1.e10
-        
+
         for pop in listPops:
             F = np.array( self.getFluorescence(pop).mean(axis=1) )
             plot.simplePlot( F, fillcolor=self.colors[pop] )
@@ -224,11 +228,11 @@ class PlateMate:
 
         maxf = 0.
         minf = 1.e10
-        
+
         for pop in listPops:
             F  = np.array( self.getFluorescence(pop).mean(axis=1) )
             dF = np.array( self.getFluorescence(pop).std(axis=1) )
-            
+
             pl.plot(F, "-o", linewidth=lw, markersize=markersize,
                     color=self.plot_connline_color,
                     markerfacecolor=self.colors[pop],
@@ -251,7 +255,7 @@ class PlateMate:
 
         return
 
-    
+
     def plotBars(self, listPops, time, binwidth = 0.15):
 
         error_config = {'ecolor': '0.', 'width': 10.0, 'linewidth' : 2.}
@@ -260,10 +264,10 @@ class PlateMate:
 
         # estimating the upper boung for plotting
         maxf = 0.
-        
+
         # Positioning each colony
         colonies = np.arange(1., 4., 1)
-        
+
         linen = 1
 
         for pop in listPops:
@@ -277,7 +281,7 @@ class PlateMate:
                    yerr = stds, error_kw=error_config)
 
             linen += 1
-        
+
         pl.xlabel("Biological replicate")
         pl.xticks( np.array(colonies, dtype=int) )
         pl.xlim(0.5, colonies.shape[0]+0.5)
@@ -329,7 +333,7 @@ class PlateMate:
 
         # Evaluating anova
         U, p = scipy.stats.f_oneway( *Paux.values() )
-        
+
         return U, p
 
     def TukeyHSD(self, listPops, confidence = 0.95):
@@ -359,9 +363,9 @@ class PlateMate:
         data = {'Group 1' : Groups[:,0], 'Group 2': Groups[:,1],
                 'Mean diff': tukey_res.meandiffs, 'Reject H0?' : tukey_res.reject}
         df = pd.DataFrame(data=data)
-        
+
         return df
-    
+
 
     ##
     ## Data filtering
