@@ -391,11 +391,9 @@ class PlateMate:
             nrows = len(mapCode) / 2
             for rowid in range(nrows):
                 mapid = rowid*2
-                print mapCode[mapid+1][1:]
                 row = mapCode[mapid][0]
                 startcol = int( mapCode[mapid][1:] )
                 endcol   = int( mapCode[mapid+1][1:] )
-                print startcol, endcol
                 for j in range(startcol, endcol):
                     cols.append( row + str(j).zfill(2) )
 
