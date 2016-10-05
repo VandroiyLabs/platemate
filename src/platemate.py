@@ -539,7 +539,7 @@ class PlateMate:
 
         auxV = np.zeros( (0,nrows*ncols) )
         for file in self.FLlist:
-            print file
+
             spsheet = xl.load_workbook(file)['final']
 
             read = np.zeros( (nrows, ncols) )
@@ -553,7 +553,6 @@ class PlateMate:
             auxV = np.concatenate(
                         (auxV, np.reshape(read, (1,read.shape[0]*read.shape[1]) ) ),
                         axis = 0 )
-            print auxV.shape
 
 
             columns = []
