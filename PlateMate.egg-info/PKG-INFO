@@ -1,0 +1,20 @@
+Metadata-Version: 1.1
+Name: PlateMate
+Version: 0.0.1
+Summary: Data analysis for 96 wells and multi-plate wells
+Home-page: https://github.com/VandroiyLabs/platemate
+Author: Thiago Mosqueiro
+Author-email: UNKNOWN
+License: MIT
+Description: PlateMate
+        ====
+        
+Keywords: plate reader,96 wells
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Biotech academia and industry
+Classifier: Topic :: Biotech :: Data analysis
+Classifier: License :: MIT License
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7

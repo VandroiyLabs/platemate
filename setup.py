@@ -7,7 +7,7 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
@@ -45,9 +45,9 @@ setup(
 
     keywords='plate reader, 96 wells',
 
-    packages=get_packages('platemate'),
+    packages=find_packages('platemate'),
 
-    install_requires=['numpy','matplotlib'],
+    install_requires=[],
 
 
     extras_require={},
