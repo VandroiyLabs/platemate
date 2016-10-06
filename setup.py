@@ -45,7 +45,7 @@ setup(
 
     keywords='plate reader, 96 wells',
 
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    packages=get_packages('platemate'),
 
     install_requires=['numpy','matplotlib'],
 
