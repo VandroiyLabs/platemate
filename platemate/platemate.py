@@ -119,6 +119,13 @@ class PlateMate:
         return self.FLdata[Channel][self.allCols(POP)]
 
 
+    def getMeanFluorescence(self, POP, Channel, range = []):
+        X = self.getFluorescence(POP, Channel)
+        if range != []: X = X._slice(range)
+        X = X.mean(axis = 0)
+        return pd.DataFrame( data=np.reshape( X.values, (X.shape[0],1) ), index= np.array( X.index ), columns = ['Mean'] )
+
+
     def normalizeAllFluorescence(self, Channel, ODChannel):
         """
         missing doc
@@ -182,7 +189,7 @@ class PlateMate:
         return
 
 
-    def plotIt(self, Channel, listPops, colors = [], ylabel = "Fluorescence (a.u.)"):
+    def plotIt(self, Channel, listPops, ax, colors = [], ylabel = "Fluorescence (a.u.)"):
         """
         missing doc
         """
@@ -197,16 +204,16 @@ class PlateMate:
         for pop in listPops:
             F = self.getFluorescence(pop, Channel)
 
-            plot.simplePlot( F, fillcolor=self.colors[pop] )
+            plot.simplePlot( F, ax, fillcolor=self.colors[pop] )
 
             if maxf < F.max().max() : maxf = F.max().max()
             if minf > F.min().min() : minf = F.min().min()
 
 
         # setting labels and axes
-        pl.xlabel('Time (h)')
-        pl.ylabel(ylabel)
-        pl.ylim(0.3*minf, 1.2*maxf)
+        ax.set_xlabel('Time (h)')
+        ax.set_ylabel(ylabel)
+        ax.set_ylim(0.3*minf, 1.2*maxf)
 
         #pl.tight_layout()
 
