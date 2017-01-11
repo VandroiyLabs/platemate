@@ -30,6 +30,15 @@ Description: PlateMate
         pip install git+https://github.com/VandroiyLabs/platemate
         ```
         
+        It is very common to have Continuum's Anaconda installed and set as main Python environment -- especially in Mac OS X systems. If you are using Anaconda and wants to install it in Anaconda's environment, you can (for now) use the ```setup.py``` script. In summary,
+        
+        ```
+        git clone https://github.com/VandroiyLabs/platemate/
+        python setup.py install
+        ```
+        
+        If you don't want to use git, you can skip the first command above and simply download the latest version of PlateMate by [clicking here](https://github.com/VandroiyLabs/platemate/archive/master.zip). If all dependencies are satisfied, it should install platemate without a problem. 
+        
         The required dependences are minimal, and there is a high chance that you have them already.
         
         * Python 2.7

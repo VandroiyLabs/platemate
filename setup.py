@@ -45,7 +45,7 @@ setup(
 
     keywords='plate reader, 96 wells',
 
-    packages=find_packages('platemate'),
+    packages=['platemate'],
 
     install_requires=[],
 
@@ -53,9 +53,4 @@ setup(
     extras_require={},
     package_data={},
 
-    entry_points={
-        'console_scripts': [
-            'platemate=platemate:main',
-        ],
-    },
 )
