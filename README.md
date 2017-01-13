@@ -31,6 +31,9 @@ python setup.py install
 
 If you don't want to use git, you can skip the first command above and simply download the latest version of PlateMate by [clicking here](https://github.com/VandroiyLabs/platemate/archive/master.zip). If all dependencies are satisfied, it should install platemate without a problem. 
 
+
+### Dependencies
+
 The required dependences are minimal, and there is a high chance that you have them already.
 
 * Python 2.7
@@ -39,7 +42,6 @@ The required dependences are minimal, and there is a high chance that you have t
 * Pandas
 * openpyxl
 * itertools
-
 
 
 Main collaborators:
