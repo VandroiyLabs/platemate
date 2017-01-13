@@ -103,13 +103,11 @@ class PlateMate:
         """ Get the names of all control colonies considered """
         return self.controlNames
 
-    def summary(self, pop = "", nrows = 3):
+    def summary(self, pop, channel, nrows = 3):
         """
         missing doc
         """
-
-        if pop == "" : pop = self.ColumnNames['A']
-        return self.fldata[self.allCols(pop)].head(nrows)
+        return self.getFluorescence( pop, channel ).head(nrows)
 
 
     def getFluorescence(self, POP, Channel):
@@ -189,7 +187,7 @@ class PlateMate:
         return
 
 
-    def plotIt(self, Channel, listPops, ax, colors = [], ylabel = "Fluorescence (a.u.)"):
+    def plotIt(self, Channel, listPops, ax, colors = [], ylabel = "Fluorescence (a.u.)", alpha = 1.0):
         """
         missing doc
         """
@@ -201,13 +199,22 @@ class PlateMate:
         minf = 1.e10
 
         # iterating colors
+        indPop = 0
         for pop in listPops:
+            
             F = self.getFluorescence(pop, Channel)
 
-            plot.simplePlot( F, ax, fillcolor=self.colors[pop] )
+            if colors == []:
+                currColor = self.colors[pop]
+            else:
+                currColor = colors[indPop]
+            
+            plot.simplePlot( F, ax, fillcolor=currColor, alpha = alpha )
 
             if maxf < F.max().max() : maxf = F.max().max()
             if minf > F.min().min() : minf = F.min().min()
+            
+            indPop += 1
 
 
         # setting labels and axes
@@ -276,8 +283,8 @@ class PlateMate:
         return
 
 
-    def plotFuzzyMean(self, Channel, listPops, colors = [], ylabel = "Fluorescence (a.u.)",
-                      fill_alpha = 0.6, lw = 2.0, markersize = 12):
+    def plotFuzzyMean(self, Channel, listPops, colors = [], fill_alpha = 0.6, lw = 2.0,
+                      markersize = 12, xlim = [], ylim = []):
         """
         missing doc
         """
@@ -287,34 +294,47 @@ class PlateMate:
         maxf = 0.
         minf = 1.e10
 
+
+        indPop = 0
         for pop in listPops:
             F  = np.array( self.getFluorescence(pop, Channel).mean(axis=1) )
             dF = np.array( self.getFluorescence(pop, Channel).std(axis=1) )
-
+            
+            if colors == []:
+                currColor = self.colors[pop]
+            else:
+                currColor = colors[indPop]
+            
+            
             pl.plot(F, "-o", label = pop, linewidth=lw, markersize=markersize,
                     color=self.plot_connline_color,
-                    markerfacecolor=self.colors[pop],
+                    markerfacecolor=currColor,
                     markeredgecolor=self.plot_markeredge_color )
 
             x = np.arange(0, F.shape[0],1 )# needs fixing!
             pl.fill_between(x, F - dF, F + dF, alpha = fill_alpha,
-                            edgecolor='none', facecolor=self.colors[pop])
+                            edgecolor='none', facecolor=currColor)
 
             if maxf < F.max().max() : maxf = F.max().max()
             if minf > F.min().min() : minf = F.min().min()
 
+            indPop += 1
 
         # setting labels and axes
-        pl.xlabel('Time (h)')
-        pl.ylabel(ylabel)
-        pl.ylim(0.3*minf, 1.2*maxf)
+        if ylim == []:
+            pl.ylim(0.8*minf, 1.2*maxf)
+        else:
+            pl.ylim( ylim[0], ylim[1] )
+        
+        if xlim != []:
+            pl.xlim( xlim[0], xlim[1] )
 
         #pl.tight_layout()
 
         return
 
 
-    def plotBars(self, listPops, time, binwidth = 0.15):
+    def plotBars(self, listPops, channel, time, binwidth = 0.15):
 
         error_config = {'ecolor': '0.', 'width': 10.0, 'linewidth' : 2.}
 
@@ -329,7 +349,7 @@ class PlateMate:
         linen = 1
 
         for pop in listPops:
-            F = self.getFluorescence(pop).iloc[time]
+            F = self.getFluorescence(pop, channel).iloc[time]
             maxf = max( maxf, F.max() )
 
             vals, stds = biolrepl( F )
@@ -356,17 +376,17 @@ class PlateMate:
     ## Statistical analyses
     ##
 
-    def compareFluorescence(self, Pop1, Pop2):
+    def compareFluorescence(self, channel, Pop1, Pop2):
         """
         It would be better to change it to a Kruskal-Wallis + Dunn
         """
 
         #if type(listPops) != type([]): listPops = [listPops]
 
-        P1 = np.array( self.getFluorescence(Pop1) )
+        P1 = np.array( self.getFluorescence(Pop1, channel) )
         data1 = np.reshape( P1, (P1.shape[0]*P1.shape[1]) )
 
-        P2 = np.array( self.getFluorescence(Pop2) )
+        P2 = np.array( self.getFluorescence(Pop2, channel) )
         data2 = np.reshape( P2, (P2.shape[0]*P2.shape[1]) )
 
         U, p = scipy.stats.mannwhitneyu(data1, data2)
@@ -517,12 +537,13 @@ class PlateMate:
         FLlist = []
         ODlist = []
         tidx   = []
-
+        
         # Looping through all files in the pattern
         for file in glob.glob(path + pattern + "*" + extension):
-            tidx.append( float( file.split(' ')[-1].split('.')[0] ) )
-            FLlist.append(file)
-            ODlist.append(pattern + " OD " + str(int(tidx[-1])) + extension)
+            if not( " OD " in file ):
+                tidx.append( float( file.split(' ')[-1].split('.')[0] ) )
+                FLlist.append(file)
+                ODlist.append(pattern + " OD " + str(int(tidx[-1])) + "." + extension)
 
 
         # Sorting according to the indices
@@ -534,8 +555,8 @@ class PlateMate:
 
 
 
-    def readFluorescence(self):
-        self.fldata = self.read_timeformat(self.FLlist)
+    def readFluorescence(self, channel):
+        self.FLdata[channel] = self.read_timeformat(self.FLlist)
         return
 
     def readOpticalDensity(self):
@@ -615,7 +636,6 @@ class PlateMate:
             dictdata[header] = TSeries[header]
 
         TimeReadings = pd.DataFrame(data = dictdata)
-
         return TimeReadings
 
 
