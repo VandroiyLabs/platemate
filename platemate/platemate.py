@@ -522,7 +522,7 @@ class PlateMate:
         for file in glob.glob(path + pattern + "*" + extension):
             tidx.append( float( file.split(' ')[-1].split('.')[0] ) )
             FLlist.append(file)
-            ODlist.append('OD'+file.split(' ')[1].split('.')[0]+'.txt')
+            ODlist.append(pattern + " OD " + str(int(tidx[-1])) + extension)
 
 
         # Sorting according to the indices
