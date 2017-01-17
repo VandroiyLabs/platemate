@@ -54,7 +54,6 @@ class PlateMate:
         self.FLdata = {}
         self.rawFLdata = {}
 
-
         # associating a color to each colony
         self.colors = {}
         pointers = { "control" : 0 , "colony" : 0 }
@@ -124,18 +123,36 @@ class PlateMate:
         return pd.DataFrame( data=np.reshape( X.values, (X.shape[0],1) ), index= np.array( X.index ), columns = ['Mean'] )
 
 
-    def normalizeAllFluorescence(self, Channel, ODChannel):
+
+
+    def normalizeAllFluorescenceControl(self, Channel, controlName):
         """
         missing doc
         """
 
         for popName in self.colonyNames:
-            self.normalizeFluorescence(popName, Channel, ODChannel)
+            # Numerator
+            N = self.rawFLdata[Channel][ self.allCols(popName) ]
+            # Denominator
+            D = self.rawFLdata[Channel][ self.allCols(controlName) ]
+            # Performing the normalization
+            self.FLdata[Channel][ self.allCols(popName) ] = pd.DataFrame( np.array( N ) / np.array( D ), columns=N.columns )
+
+        return
+    
+    
+    def normalizeAllFluorescenceOD(self, Channel):
+        """
+        missing doc
+        """
+
+        for popName in self.colonyNames:
+            self.normalizeFluorescence(popName, Channel, self.ODchannel)
 
         return
 
 
-    def normalizeFluorescence(self, POP, Channel, ODChannel):
+    def normalizeFluorescenceOD(self, POP, Channel, ODChannel):
         """
         missing doc
         """
@@ -150,7 +167,7 @@ class PlateMate:
         """
         missing doc
         """
-        return self.oddata[self.allCols(pop)]
+        return self.FLdata[self.ODchannel][self.allCols(pop)]
 
     ## temperature
 
@@ -201,19 +218,19 @@ class PlateMate:
         # iterating colors
         indPop = 0
         for pop in listPops:
-            
+
             F = self.getFluorescence(pop, Channel)
 
             if colors == []:
                 currColor = self.colors[pop]
             else:
                 currColor = colors[indPop]
-            
+
             plot.simplePlot( F, ax, fillcolor=currColor, alpha = alpha )
 
             if maxf < F.max().max() : maxf = F.max().max()
             if minf > F.min().min() : minf = F.min().min()
-            
+
             indPop += 1
 
 
@@ -299,25 +316,29 @@ class PlateMate:
         for pop in listPops:
             F  = np.array( self.getFluorescence(pop, Channel).mean(axis=1) )
             dF = np.array( self.getFluorescence(pop, Channel).std(axis=1) )
-            
+
             if colors == []:
                 currColor = self.colors[pop]
             else:
                 currColor = colors[indPop]
-            
-            
+
+
             pl.plot(F, "-o", label = pop, linewidth=lw, markersize=markersize,
                     color=self.plot_connline_color,
                     markerfacecolor=currColor,
                     markeredgecolor=self.plot_markeredge_color )
 
-            x = np.arange(0, F.shape[0],1 )# needs fixing!
-            pl.fill_between(x, F - dF, F + dF, alpha = fill_alpha,
+            # shaded areas
+            dx  = 0.5
+            x   = np.hstack( [-dx, np.arange(0, F.shape[0], 1 ), F.shape[0] + dx] )    # needs fixing!
+            F_  = np.hstack([F[0], F, F[-1]])
+            dF_ = np.hstack([dF[0], dF, dF[-1]])
+            pl.fill_between(x, F_ - dF_, F_ + dF_, alpha = fill_alpha, zorder=-1,
                             edgecolor='none', facecolor=currColor)
-
+            
             if maxf < F.max().max() : maxf = F.max().max()
             if minf > F.min().min() : minf = F.min().min()
-
+            
             indPop += 1
 
         # setting labels and axes
@@ -325,7 +346,7 @@ class PlateMate:
             pl.ylim(0.8*minf, 1.2*maxf)
         else:
             pl.ylim( ylim[0], ylim[1] )
-        
+
         if xlim != []:
             pl.xlim( xlim[0], xlim[1] )
 
@@ -457,7 +478,7 @@ class PlateMate:
         cols = []
 
         mapCode = self.map[POP]
-
+        
         ## IF whole column....
         if len(mapCode) == 1:
             row = mapCode[0]
@@ -537,7 +558,7 @@ class PlateMate:
         FLlist = []
         ODlist = []
         tidx   = []
-        
+
         # Looping through all files in the pattern
         for file in glob.glob(path + pattern + "*" + extension):
             if not( " OD " in file ):
@@ -556,11 +577,14 @@ class PlateMate:
 
 
     def readFluorescence(self, channel):
-        self.FLdata[channel] = self.read_timeformat(self.FLlist)
+        self.rawFLdata[channel] = self.read_timeformat(self.FLlist)
+        self.FLdata[channel] = self.rawFLdata[channel]
         return
 
-    def readOpticalDensity(self):
-        self.oddata = self.read_timeformat(self.ODlist, datarow=1)
+    def readOpticalDensity(self, ODchannel):
+        self.ODchannel = ODchannel
+        self.rawFLdata[ODchannel] = self.read_timeformat(self.ODlist, datarow=1)
+        self.FLdata[ODchannel] = self.rawFLdata[ODchannel]
         return
 
     def read_timeformat(self, ListOfFiles, nr_header = 2, sep = '\t',
@@ -597,27 +621,30 @@ class PlateMate:
 
         # Getting the data
         for filename in ListOfFiles[1:]:
-
+            
             f = open(filename, 'r')
             for j in range(nr_header+1):
                 f.readline()
-
+                
             Readings = []
             Times = []
-
+            
             row = 0
-            while True:
+            fileStopSwitch = False
+            while not fileStopSwitch:
+                
                 line = f.readline()
-
+                
                 if not line or line == '\r\n' :
-                    if row >= datarow: break
+                    if row >= datarow:
+                        fileStopSwitch = True
                 else:
                     row += 1
-
+                    
                 if row == datarow:
-
+                    
                     line_usfl = line.split(sep)[1:-1]
-
+                    
                     cnt = 0
                     for item in line_usfl:
                         if ( item == '' ):
@@ -625,11 +652,11 @@ class PlateMate:
                         else:
                             TSeries[HEADERS[cnt]].append( float(item) )
                         cnt += 1
-
+                        
             # Closing the file
             f.close()
-
-
+            
+            
         # Turning it into a Pandas DataFrame object
         dictdata = {}
         for header in HEADERS:
