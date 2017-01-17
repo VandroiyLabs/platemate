@@ -330,7 +330,8 @@ class PlateMate:
 
             # shaded areas
             dx  = 0.5
-            x   = np.hstack( [-dx, np.arange(0, F.shape[0], 1 ), F.shape[0] + dx] )    # needs fixing!
+            
+            x   = np.hstack( [-dx, np.arange(0, F.shape[0], 1 ), F.shape[0] -1 + dx] )    # needs fixing!
             F_  = np.hstack([F[0], F, F[-1]])
             dF_ = np.hstack([dF[0], dF, dF[-1]])
             pl.fill_between(x, F_ - dF_, F_ + dF_, alpha = fill_alpha, zorder=-1,
